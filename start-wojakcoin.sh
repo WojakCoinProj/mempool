@@ -9,16 +9,40 @@
 #   FRONTEND_PORT=8080 ./start-wojakcoin.sh
 #   SKIP_INSTALL=1 ./start-wojakcoin.sh
 #
-# Manual UI only (from frontend/, backend must be on :8999):
-#   NODE_OPTIONS=--max-old-space-size=8192 node ./node_modules/@angular/cli/bin/ng.js serve -c wojakcoin --host 127.0.0.1 --port 4200
+# Manual UI only (from frontend/, backend must be on :8999). Use a free --port if 4200 is taken:
+#   CI=true NG_CLI_ANALYTICS=false NODE_OPTIONS=--max-old-space-size=8192 node ./node_modules/@angular/cli/bin/ng.js serve -c wojakcoin --host 127.0.0.1 --port 4200
 #
 
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")" && pwd)"
 BACKEND_PORT="${BACKEND_PORT:-8999}"
-FRONTEND_PORT="${FRONTEND_PORT:-4200}"
+REQUESTED_FRONTEND_PORT="${FRONTEND_PORT:-4200}"
 SKIP_INSTALL="${SKIP_INSTALL:-0}"
+
+# If the chosen port is busy, pick the next free one (avoids ng's interactive "use another port?" prompt when stdin is not a TTY).
+tcp_port_busy() {
+  local p=$1
+  command -v ss >/dev/null 2>&1 || return 1
+  ss -tln 2>/dev/null | grep -qE ":${p}\\b"
+}
+pick_free_port() {
+  local p=$1
+  local end=$((p + 100))
+  while (( p <= end )); do
+    if ! tcp_port_busy "${p}"; then
+      echo "${p}"
+      return 0
+    fi
+    p=$((p + 1))
+  done
+  echo "ERROR: no free TCP port between ${1} and ${end} (stop old ng serve / pick FRONTEND_PORT)." >&2
+  exit 1
+}
+FRONTEND_PORT="$(pick_free_port "${REQUESTED_FRONTEND_PORT}")"
+if [[ "${FRONTEND_PORT}" != "${REQUESTED_FRONTEND_PORT}" ]]; then
+  echo "    Note: port ${REQUESTED_FRONTEND_PORT} busy → using ${FRONTEND_PORT}"
+fi
 
 # Extra args for Angular, e.g. NG_CLI_ARGS="--configuration production"
 NG_CLI_ARGS="${NG_CLI_ARGS:-}"
@@ -82,6 +106,8 @@ echo "    Using Angular config 'wojakcoin' (localize off for faster dev compile)
 (
   cd "${ROOT}/frontend"
   export NODE_OPTIONS="${NODE_OPTIONS:---max-old-space-size=8192}"
+  export CI=true
+  export NG_CLI_ANALYTICS=false
   NG_CLI="./node_modules/@angular/cli/bin/ng.js"
   # shellcheck disable=SC2086
   exec node "${NG_CLI}" serve -c wojakcoin --host 127.0.0.1 --port "${FRONTEND_PORT}" ${NG_CLI_ARGS}

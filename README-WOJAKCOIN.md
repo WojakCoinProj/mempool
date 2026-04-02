@@ -44,8 +44,10 @@ If you see **`Cannot find module 'rxjs'`** from Angular, the frontend `node_modu
 To run the dev UI **without** `npm run ng`, from `frontend/` (with API on **8999**):
 
 ```bash
-NODE_OPTIONS=--max-old-space-size=8192 node ./node_modules/@angular/cli/bin/ng.js serve -c wojakcoin --host 127.0.0.1 --port 4200
+CI=true NG_CLI_ANALYTICS=false NODE_OPTIONS=--max-old-space-size=8192 node ./node_modules/@angular/cli/bin/ng.js serve -c wojakcoin --host 127.0.0.1 --port 4200
 ```
+
+If **`ng serve` hangs or asks about a port**, another dev server is probably using that port. Stop it (`pkill -f 'ng.js serve'`) or use another `--port`. The repo `start-wojakcoin.sh` scans upward from `FRONTEND_PORT` for a free port automatically.
 
 ## Quick start (local backend, no Docker)
 
