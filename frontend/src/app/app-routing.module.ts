@@ -198,6 +198,16 @@ let routes: Routes = [
     data: { preload: true },
   },
   {
+    path: 'mining',
+    loadChildren: () => import('@app/bitcoin-graphs.module').then(m => m.BitcoinGraphsModule),
+    data: { preload: true },
+  },
+  {
+    path: 'graphs',
+    loadChildren: () => import('@app/bitcoin-graphs.module').then(m => m.BitcoinGraphsModule),
+    data: { preload: true },
+  },
+  {
     path: 'tx',
     canMatch: [TrackerGuard],
     runGuardsAndResolvers: 'always',

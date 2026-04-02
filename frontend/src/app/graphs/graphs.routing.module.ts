@@ -25,11 +25,89 @@ import { AccelerationsListComponent } from '@components/acceleration/acceleratio
 import { AddressComponent } from '@components/address/address.component';
 import { WalletComponent } from '@components/wallet/wallet.component';
 import { CalculatorComponent } from '@components/calculator/calculator.component';
+import {
+  GraphsLazyPrefixGuard,
+  MiningDashboardRootGuard,
+  MiningPoolDeepGuard,
+} from '@app/route-guards';
 
 const browserWindow = window || {};
 // @ts-ignore
 const browserWindowEnv = browserWindow.__env || {};
 const isCustomized = browserWindowEnv?.customize?.dashboard;
+
+const graphsTabChildren: Routes = [
+  {
+    path: 'mempool',
+    data: { networks: ['bitcoin', 'liquid'] },
+    component: StatisticsComponent,
+  },
+  {
+    path: 'mining/hashrate-difficulty',
+    data: { networks: ['bitcoin'] },
+    component: HashrateChartComponent,
+  },
+  {
+    path: 'mining/pools-dominance',
+    data: { networks: ['bitcoin'] },
+    component: HashrateChartPoolsComponent,
+  },
+  {
+    path: 'mining/pools',
+    data: { networks: ['bitcoin'] },
+    component: PoolRankingComponent,
+  },
+  {
+    path: 'mining/block-fees',
+    data: { networks: ['bitcoin'] },
+    component: BlockFeesGraphComponent,
+  },
+  {
+    path: 'mining/block-fees-subsidy',
+    data: { networks: ['bitcoin'] },
+    component: BlockFeesSubsidyGraphComponent,
+  },
+  {
+    path: 'mining/block-rewards',
+    data: { networks: ['bitcoin'] },
+    component: BlockRewardsGraphComponent,
+  },
+  {
+    path: 'mining/block-fee-rates',
+    data: { networks: ['bitcoin'] },
+    component: BlockFeeRatesGraphComponent,
+  },
+  {
+    path: 'mining/block-sizes-weights',
+    data: { networks: ['bitcoin'] },
+    component: BlockSizesWeightsGraphComponent,
+  },
+  {
+    path: 'acceleration/fees',
+    data: { networks: ['bitcoin'], networkSpecific: true, onlySubnet: [''] },
+    component: AccelerationFeesGraphComponent,
+  },
+  {
+    path: 'lightning',
+    data: { preload: true, networks: ['bitcoin'] },
+    loadChildren: () => import ('@app/graphs/lightning-graphs.module').then(m => m.LightningGraphsModule),
+  },
+  {
+    path: '',
+    pathMatch: 'full',
+    redirectTo: 'mempool',
+  },
+  {
+    path: 'mining/block-health',
+    data: { networks: ['bitcoin'] },
+    component: BlockHealthGraphComponent,
+  },
+  {
+    path: 'price',
+    data: { networks: ['bitcoin'], networkSpecific: true, onlySubnet: [''] },
+    component: PriceChartComponent,
+  },
+];
 
 const routes: Routes = [
   {
@@ -43,6 +121,24 @@ const routes: Routes = [
         path: 'mining/pool/:slug',
         data: { networks: ['bitcoin'] },
         component: PoolComponent,
+      },
+      {
+        path: 'pool/:slug',
+        canMatch: [MiningPoolDeepGuard],
+        data: { networks: ['bitcoin'] },
+        component: PoolComponent,
+      },
+      {
+        path: '',
+        canMatch: [MiningDashboardRootGuard],
+        data: { networks: ['bitcoin'] },
+        component: StartComponent,
+        children: [
+          {
+            path: '',
+            component: MiningDashboardComponent,
+          },
+        ],
       },
       {
         path: 'mining',
@@ -105,81 +201,17 @@ const routes: Routes = [
         }
       },
       {
+        path: '',
+        canMatch: [GraphsLazyPrefixGuard],
+        data: { networks: ['bitcoin', 'liquid'] },
+        component: GraphsComponent,
+        children: graphsTabChildren,
+      },
+      {
         path: 'graphs',
         data: { networks: ['bitcoin', 'liquid'] },
         component: GraphsComponent,
-        children: [
-          {
-            path: 'mempool',
-            data: { networks: ['bitcoin', 'liquid'] },
-            component: StatisticsComponent,
-          },
-          {
-            path: 'mining/hashrate-difficulty',
-            data: { networks: ['bitcoin'] },
-            component: HashrateChartComponent,
-          },
-          {
-            path: 'mining/pools-dominance',
-            data: { networks: ['bitcoin'] },
-            component: HashrateChartPoolsComponent,
-          },
-          {
-            path: 'mining/pools',
-            data: { networks: ['bitcoin'] },
-            component: PoolRankingComponent,
-          },
-          {
-            path: 'mining/block-fees',
-            data: { networks: ['bitcoin'] },
-            component: BlockFeesGraphComponent,
-          },
-          {
-            path: 'mining/block-fees-subsidy',
-            data: { networks: ['bitcoin'] },
-            component: BlockFeesSubsidyGraphComponent,
-          },
-          {
-            path: 'mining/block-rewards',
-            data: { networks: ['bitcoin'] },
-            component: BlockRewardsGraphComponent,
-          },
-          {
-            path: 'mining/block-fee-rates',
-            data: { networks: ['bitcoin'] },
-            component: BlockFeeRatesGraphComponent,
-          },
-          {
-            path: 'mining/block-sizes-weights',
-            data: { networks: ['bitcoin'] },
-            component: BlockSizesWeightsGraphComponent,
-          },
-          {
-            path: 'acceleration/fees',
-            data: { networks: ['bitcoin'], networkSpecific: true, onlySubnet: [''] },
-            component: AccelerationFeesGraphComponent,
-          },
-          {
-            path: 'lightning',
-            data: { preload: true, networks: ['bitcoin'] },
-            loadChildren: () => import ('@app/graphs/lightning-graphs.module').then(m => m.LightningGraphsModule),
-          },
-          {
-            path: '',
-            pathMatch: 'full',
-            redirectTo: 'mempool',
-          },
-          {
-            path: 'mining/block-health',
-            data: { networks: ['bitcoin'] },
-            component: BlockHealthGraphComponent,
-          },
-          {
-            path: 'price',
-            data: { networks: ['bitcoin'], networkSpecific: true, onlySubnet: [''] },
-            component: PriceChartComponent,
-          },
-        ]
+        children: graphsTabChildren,
       },
       {
         path: '',
