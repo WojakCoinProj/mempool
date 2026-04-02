@@ -85,20 +85,34 @@ if [[ ! -f "${ROOT}/backend/dist/index.js" ]]; then
   (cd "${ROOT}/backend" && npm run build)
 fi
 
-echo "==> backend :${BACKEND_PORT}"
-(
-  cd "${ROOT}/backend"
-  export MEMPOOL_CONFIG_FILE="${MEMPOOL_CONFIG_FILE:-${ROOT}/backend/mempool-config.json}"
-  exec node --max-old-space-size=2048 dist/index.js
-) &
-BACK_PID=$!
+BACK_PID=""
+API_URL="http://127.0.0.1:${BACKEND_PORT}/api/v1/backend-info"
 
-for _ in $(seq 1 90); do
-  curl -sf "http://127.0.0.1:${BACKEND_PORT}/api/v1/backend-info" >/dev/null 2>&1 && break
-  kill -0 "${BACK_PID}" 2>/dev/null || { echo "ERROR: backend died"; exit 1; }
-  sleep 1
-done
-curl -sf "http://127.0.0.1:${BACKEND_PORT}/api/v1/backend-info" >/dev/null || { echo "ERROR: backend not responding on ${BACKEND_PORT}"; exit 1; }
+# Reuse an already-running mempool API so we do not hit EADDRINUSE (common after a prior run or screen/tmux).
+if curl -sf "${API_URL}" >/dev/null 2>&1; then
+  echo "==> backend :${BACKEND_PORT} (already running — not starting a second process)"
+  echo "    Stop the old server first if you need a fresh backend (e.g. pkill -f 'mempool-wojakcoin/backend.*dist/index.js')."
+else
+  if tcp_port_busy "${BACKEND_PORT}"; then
+    echo "ERROR: port ${BACKEND_PORT} is in use but does not respond like mempool (${API_URL})."
+    echo "       Free the port or set BACKEND_PORT=..."
+    exit 1
+  fi
+  echo "==> starting backend :${BACKEND_PORT}"
+  (
+    cd "${ROOT}/backend"
+    export MEMPOOL_CONFIG_FILE="${MEMPOOL_CONFIG_FILE:-${ROOT}/backend/mempool-config.json}"
+    exec node --max-old-space-size=2048 dist/index.js
+  ) &
+  BACK_PID=$!
+
+  for _ in $(seq 1 90); do
+    curl -sf "${API_URL}" >/dev/null 2>&1 && break
+    kill -0 "${BACK_PID}" 2>/dev/null || { echo "ERROR: backend died"; exit 1; }
+    sleep 1
+  done
+  curl -sf "${API_URL}" >/dev/null || { echo "ERROR: backend not responding on ${BACKEND_PORT}"; exit 1; }
+fi
 echo "    API http://127.0.0.1:${BACKEND_PORT}/api/v1/"
 
 echo "==> frontend (ng serve, /api proxied to backend) http://127.0.0.1:${FRONTEND_PORT}/"
@@ -116,5 +130,9 @@ FRONT_PID=$!
 
 echo ""
 echo "    Open: http://127.0.0.1:${FRONTEND_PORT}/"
-echo "    Ctrl+C stops both."
+if [[ -n "${BACK_PID}" ]]; then
+  echo "    Ctrl+C stops the dev server and this script’s backend process."
+else
+  echo "    Ctrl+C stops only the dev server (backend on :${BACKEND_PORT} was already running)."
+fi
 wait "${FRONT_PID}" 2>/dev/null || true

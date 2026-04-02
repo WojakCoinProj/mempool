@@ -49,6 +49,8 @@ CI=true NG_CLI_ANALYTICS=false NODE_OPTIONS=--max-old-space-size=8192 node ./nod
 
 If **`ng serve` hangs or asks about a port**, another dev server is probably using that port. Stop it (`pkill -f 'ng.js serve'`) or use another `--port`. The repo `start-wojakcoin.sh` scans upward from `FRONTEND_PORT` for a free port automatically.
 
+If you see **`EADDRINUSE :::8999`**, a mempool backend is already running. `start-wojakcoin.sh` reuses a healthy API on **8999** and only starts a new Node process when nothing responds there. To restart the backend, stop the old process first (e.g. find it with `ss -tlnp | grep 8999` or `pkill -f 'mempool-wojakcoin/backend'`).
+
 ## Quick start (local backend, no Docker)
 
 1. Run **WojakCore** with `txindex=1` (recommended for full explorer behavior) and RPC enabled.
