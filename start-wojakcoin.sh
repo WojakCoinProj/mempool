@@ -12,6 +12,7 @@
 #   FRONTEND_PORT=8080 ./start-wojakcoin.sh
 #   SKIP_INSTALL=1 ./start-wojakcoin.sh
 #   WOJAKCOIN_HOST=0.0.0.0 ./start-wojakcoin.sh   # listen on all interfaces (dev only)
+#   MEMPOOL_SYNC_ASSETS=1 ./start-wojakcoin.sh    # run full sync-assets-dev (GitHub); default skips for offline start
 #
 # Manual UI only (backend must be on :8999):
 #   CI=true NG_CLI_ANALYTICS=false NODE_OPTIONS=--max-old-space-size=8192 \
@@ -88,6 +89,20 @@ common_setup() {
     rm -rf "${ROOT}/frontend/node_modules"
     (cd "${ROOT}/frontend" && npm ci)
   fi
+
+  # Same as npm start / serve: without this, src/index.html is missing (gitignored) and / returns 404.
+  echo "==> frontend: generate-themes + generate-config (writes src/index.html + resources/config.js)..."
+  (
+    cd "${ROOT}/frontend"
+    npm run generate-themes
+    npm run generate-config
+    # sync-assets-dev pulls pool logos / promo from GitHub unless skipped (default: skip for offline-friendly start).
+    if [[ "${MEMPOOL_SYNC_ASSETS:-0}" == "1" ]]; then
+      npm run sync-assets-dev
+    else
+      SKIP_SYNC=1 npm run sync-assets-dev
+    fi
+  )
 
   if [[ ! -f "${ROOT}/backend/dist/index.js" ]]; then
     echo "==> backend npm run build..."
