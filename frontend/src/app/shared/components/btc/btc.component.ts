@@ -34,9 +34,11 @@ export class BtcComponent implements OnInit, OnChanges {
   }
 
   ngOnChanges(changes: SimpleChanges): void {
+    const nativeSymbol =
+      (typeof window !== 'undefined' && (window as any).__env && (window as any).__env.NATIVE_ASSET_SYMBOL) || 'BTC';
     if (this.satoshis >= 1_000_000) {
       this.value = (this.satoshis / 100_000_000);
-      this.unit = 'BTC';
+      this.unit = nativeSymbol;
     } else {
       this.value = Math.round(this.satoshis);
       this.unit = 'sats';

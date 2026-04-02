@@ -1,0 +1,20 @@
+{
+  "theme": "wiz",
+  "enterprise": "wojakcoin",
+  "branding": {
+    "name": "wojakcoin",
+    "title": "Wojakcoin",
+    "rounded_corner": true
+  },
+  "dashboard": {
+    "widgets": [
+      {
+        "component": "fees",
+        "mobileOrder": 4
+      },
+      {
+        "component": "blocks"
+      }
+    ]
+  }
+}
