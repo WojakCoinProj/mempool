@@ -28,6 +28,17 @@ WojakCore predates several Bitcoin Core RPC details. Set **`"MEMPOOL": { "LEGACY
 - `getrawtransaction` uses integer `0`/`1` instead of boolean.
 - `getblockstats` is missing on older nodes; the backend falls back to **computed** per-block stats when the RPC returns “Method not found”.
 
+## One-command start (local)
+
+From the repo root, after `backend/mempool-config.json` is configured:
+
+```bash
+chmod +x ./start-wojakcoin.sh   # once
+./start-wojakcoin.sh
+```
+
+This installs npm dependencies on first run, builds the backend if needed, starts the API on **:8999**, and runs the Angular dev server (proxies `/api` to the backend). Override **`FRONTEND_PORT`** (default `4200`) or **`SKIP_INSTALL=1`** if dependencies are already installed.
+
 ## Quick start (local backend, no Docker)
 
 1. Run **WojakCore** with `txindex=1` (recommended for full explorer behavior) and RPC enabled.
