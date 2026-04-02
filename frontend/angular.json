@@ -229,6 +229,9 @@
                   "maximumWarning": "6kb"
                 }
               ]
+            },
+            "wojakcoin-dev": {
+              "localize": false
             }
           },
           "defaultConfiguration": ""
@@ -245,6 +248,11 @@
             "local": {
               "proxyConfig": "proxy.conf.local.js",
               "verbose": true
+            },
+            "wojakcoin": {
+              "proxyConfig": "proxy.conf.local.js",
+              "verbose": true,
+              "buildTarget": "mempool:build:wojakcoin-dev"
             },
             "local-esplora": {
               "proxyConfig": "proxy.conf.local-esplora.js",
