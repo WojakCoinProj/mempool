@@ -356,7 +356,7 @@ class Server {
     if (config.STATISTICS.ENABLED && config.DATABASE.ENABLED && config.MEMPOOL.ENABLED) {
       statisticsRoutes.initRoutes(this.app);
     }
-    if (Common.indexingEnabled() && config.MEMPOOL.ENABLED) {
+    if (Common.miningHttpRoutesEnabled()) {
       miningRoutes.initRoutes(this.app);
     }
     if (Common.isLiquid()) {

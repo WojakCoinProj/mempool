@@ -866,6 +866,19 @@ export class Common {
     );
   }
 
+  /**
+   * Register /api/v1/mining/* routes whenever MariaDB is on (even if INDEXING_BLOCKS_AMOUNT is 0).
+   * Without indexing, responses are mostly empty; with indexing they fill in. Previously routes were
+   * omitted when INDEXING_BLOCKS_AMOUNT was 0, which made the frontend see HTTP 404 for all mining calls.
+   */
+  static miningHttpRoutesEnabled(): boolean {
+    return (
+      ['mainnet', 'testnet', 'signet', 'testnet4', 'regtest'].includes(config.MEMPOOL.NETWORK) &&
+      config.DATABASE.ENABLED === true &&
+      config.MEMPOOL.ENABLED === true
+    );
+  }
+
   static blocksSummariesIndexingEnabled(): boolean {
     return (
       Common.indexingEnabled() &&
