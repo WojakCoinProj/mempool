@@ -130,7 +130,7 @@ FRONT_PID=$!
 
 echo ""
 echo "    Open: http://127.0.0.1:${FRONTEND_PORT}/"
-echo "    First compile can take 1–3 min. Logs like 'wait until bundle finished' mean webpack is still building — refresh after you see 'Compiled' / 'compiled successfully'."
+echo "    First webpack build can take 1–3 min; refresh after logs show Compiled."
 if [[ -n "${BACK_PID}" ]]; then
   echo "    Ctrl+C stops the dev server and this script’s backend process."
 else
