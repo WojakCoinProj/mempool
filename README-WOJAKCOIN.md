@@ -41,6 +41,12 @@ This installs npm dependencies on first run, builds the backend if needed, start
 
 If you see **`Cannot find module 'rxjs'`** from Angular, the frontend `node_modules` is incomplete (e.g. only `rxjs/dist/`). Remove it and reinstall: `cd frontend && rm -rf node_modules && npm ci`. The start script auto-repairs this when `require('rxjs')` fails.
 
+To run the dev UI **without** `npm run ng`, from `frontend/` (with API on **8999**):
+
+```bash
+NODE_OPTIONS=--max-old-space-size=8192 node ./node_modules/@angular/cli/bin/ng.js serve -c wojakcoin --host 127.0.0.1 --port 4200
+```
+
 ## Quick start (local backend, no Docker)
 
 1. Run **WojakCore** with `txindex=1` (recommended for full explorer behavior) and RPC enabled.

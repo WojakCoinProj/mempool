@@ -9,6 +9,9 @@
 #   FRONTEND_PORT=8080 ./start-wojakcoin.sh
 #   SKIP_INSTALL=1 ./start-wojakcoin.sh
 #
+# Manual UI only (from frontend/, backend must be on :8999):
+#   NODE_OPTIONS=--max-old-space-size=8192 node ./node_modules/@angular/cli/bin/ng.js serve -c wojakcoin --host 127.0.0.1 --port 4200
+#
 
 set -euo pipefail
 
@@ -75,10 +78,13 @@ curl -sf "http://127.0.0.1:${BACKEND_PORT}/api/v1/backend-info" >/dev/null || { 
 echo "    API http://127.0.0.1:${BACKEND_PORT}/api/v1/"
 
 echo "==> frontend (ng serve, /api proxied to backend) http://127.0.0.1:${FRONTEND_PORT}/"
+echo "    Using Angular config 'wojakcoin' (localize off for faster dev compile)."
 (
   cd "${ROOT}/frontend"
+  export NODE_OPTIONS="${NODE_OPTIONS:---max-old-space-size=8192}"
+  NG_CLI="./node_modules/@angular/cli/bin/ng.js"
   # shellcheck disable=SC2086
-  exec npm run ng -- serve -c local --host 127.0.0.1 --port "${FRONTEND_PORT}" ${NG_CLI_ARGS}
+  exec node "${NG_CLI}" serve -c wojakcoin --host 127.0.0.1 --port "${FRONTEND_PORT}" ${NG_CLI_ARGS}
 ) &
 FRONT_PID=$!
 
