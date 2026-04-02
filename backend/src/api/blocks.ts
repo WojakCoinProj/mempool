@@ -388,7 +388,15 @@ class Blocks {
 
   private async $getBlockStats(block: IEsploraApi.Block, transactions: TransactionExtended[]): Promise<IBitcoinApi.BlockStats> {
     if (!block.stale) {
-      return bitcoinClient.getBlockStats(block.id);
+      try {
+        return await bitcoinClient.getBlockStats(block.id);
+      } catch (e: any) {
+        const noRpc = e?.code === -32601 || e?.message === 'Method not found';
+        if (!noRpc) {
+          throw e;
+        }
+        logger.debug(`getblockstats unavailable (${e?.message || e}), using computed stats`);
+      }
     }
 
     // TODO: make these match the definitions used by the RPC response

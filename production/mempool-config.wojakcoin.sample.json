@@ -2,6 +2,7 @@
   "MEMPOOL": {
     "NETWORK": "mainnet",
     "BACKEND": "electrum",
+    "LEGACY_GETBLOCK": true,
     "ENABLED": true,
     "OFFICIAL": false,
     "HTTP_PORT": 8999,

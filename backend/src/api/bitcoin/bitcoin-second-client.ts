@@ -1,3 +1,4 @@
+import './legacy-rpc-patch';
 import config from '../../config';
 const bitcoin = require('../../rpc-api/index');
 import { BitcoinRpcCredentials } from './bitcoin-api-abstract-factory';

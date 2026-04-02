@@ -43,6 +43,8 @@ interface IConfig {
     ALLOW_UNREACHABLE: boolean;
     PRICE_UPDATES_PER_HOUR: number;
     MAX_TRACKED_ADDRESSES: number;
+    /** Wojakcoin / pre-0.16 forks: getblock only accepts boolean verbose; getrawtransaction wants int verbosity */
+    LEGACY_GETBLOCK: boolean;
   };
   ESPLORA: {
     REST_API_URL: string;
@@ -214,6 +216,7 @@ const defaults: IConfig = {
     'ALLOW_UNREACHABLE': true,
     'PRICE_UPDATES_PER_HOUR': 1,
     'MAX_TRACKED_ADDRESSES': 1,
+    'LEGACY_GETBLOCK': false,
   },
   'ESPLORA': {
     'REST_API_URL': 'http://127.0.0.1:3000',

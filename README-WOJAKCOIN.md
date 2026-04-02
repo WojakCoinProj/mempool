@@ -20,6 +20,14 @@ The backend uses **`MEMPOOL.BACKEND`: `electrum`**: Electrum talks to electrs; B
 - Wojakcoin mainnet uses **P2PKH addresses starting with `W`** and **P2SH with `3`** (same script version byte as Bitcoin). This fork adjusts the mainnet address matcher accordingly and disables bech32 `bc1` matching for mainnet (WojakCore here has no native segwit).
 - The large-unit ticker is set via **`NATIVE_ASSET_SYMBOL`** (`WJK` in `production/mempool-frontend-config.wojakcoin.json`); amounts under 1 WJK still show as **sats**.
 
+## WojakCore RPC compatibility
+
+WojakCore predates several Bitcoin Core RPC details. Set **`"MEMPOOL": { "LEGACY_GETBLOCK": true }`** in `mempool-config.json` so that:
+
+- `getblock` uses boolean verbose (and builds “verbosity 2” blocks via `getblock … true` + `getrawtransaction` per tx).
+- `getrawtransaction` uses integer `0`/`1` instead of boolean.
+- `getblockstats` is missing on older nodes; the backend falls back to **computed** per-block stats when the RPC returns “Method not found”.
+
 ## Quick start (local backend, no Docker)
 
 1. Run **WojakCore** with `txindex=1` (recommended for full explorer behavior) and RPC enabled.
