@@ -46,6 +46,13 @@ if [[ "${SKIP_INSTALL}" != "1" ]]; then
   [[ ! -d "${ROOT}/frontend/node_modules" ]] && { echo "==> frontend npm ci..."; (cd "${ROOT}/frontend" && npm ci); }
 fi
 
+# Corrupted installs can leave node_modules/rxjs without package.json → "Cannot find module 'rxjs'" from Angular CLI
+if ! (cd "${ROOT}/frontend" && node -e "require('rxjs')" 2>/dev/null); then
+  echo "==> frontend: repairing node_modules (rxjs / peer deps incomplete)..."
+  rm -rf "${ROOT}/frontend/node_modules"
+  (cd "${ROOT}/frontend" && npm ci)
+fi
+
 if [[ ! -f "${ROOT}/backend/dist/index.js" ]]; then
   echo "==> backend npm run build..."
   (cd "${ROOT}/backend" && npm run build)

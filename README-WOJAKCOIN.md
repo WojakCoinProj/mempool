@@ -39,6 +39,8 @@ chmod +x ./start-wojakcoin.sh   # once
 
 This installs npm dependencies on first run, builds the backend if needed, starts the API on **:8999**, and runs the Angular dev server (proxies `/api` to the backend). Override **`FRONTEND_PORT`** (default `4200`) or **`SKIP_INSTALL=1`** if dependencies are already installed.
 
+If you see **`Cannot find module 'rxjs'`** from Angular, the frontend `node_modules` is incomplete (e.g. only `rxjs/dist/`). Remove it and reinstall: `cd frontend && rm -rf node_modules && npm ci`. The start script auto-repairs this when `require('rxjs')` fails.
+
 ## Quick start (local backend, no Docker)
 
 1. Run **WojakCore** with `txindex=1` (recommended for full explorer behavior) and RPC enabled.
