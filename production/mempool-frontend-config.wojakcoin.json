@@ -18,7 +18,7 @@
   "ROOT_NETWORK": "",
   "MEMPOOL_WEBSITE_URL": "http://127.0.0.1:8080",
   "LIQUID_WEBSITE_URL": "https://liquid.network",
-  "MINING_DASHBOARD": true,
+  "MINING_DASHBOARD": false,
   "LIGHTNING": false,
   "AUDIT": false,
   "ACCELERATOR": false,
