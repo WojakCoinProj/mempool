@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams, HttpResponse } from '@angular/common/http';
-import { BehaviorSubject, Observable, catchError, filter, from, of, shareReplay, switchMap, take, tap } from 'rxjs';
+import { BehaviorSubject, EMPTY, Observable, catchError, expand, filter, from, map, of, reduce, shareReplay, switchMap, take, tap, throwError } from 'rxjs';
 import { Transaction, Address, Outspend, Recent, Asset, ScriptHash, AddressTxSummary, Utxo, AssetRegistryItem } from '@interfaces/electrs.interface';
 import { StateService } from '@app/services/state.service';
 import { BlockExtended } from '@interfaces/node-api.interface';
@@ -163,7 +163,49 @@ export class ElectrsApiService {
     if (txid) {
       params = params.append('after_txid', txid);
     }
-    return this.httpClient.get<AddressTxSummary[]>(this.apiBaseUrl + this.apiBasePath + '/api/address/' + address + '/txs/summary', { params });
+    return this.httpClient.get<AddressTxSummary[]>(this.apiBaseUrl + this.apiBasePath + '/api/address/' + address + '/txs/summary', { params }).pipe(
+      // Some esplora backends (e.g. WojakCoin's electrs) don't implement the
+      // /txs/summary extension. Reconstruct it from the address transactions.
+      catchError((err) => (err?.status === 404) ? this.getAddressSummaryFromTxs$(address) : throwError(() => err)),
+    );
+  }
+
+  // Build an AddressTxSummary[] (newest-first) from the address' transactions by
+  // computing each tx's net value change for the address. Used as a fallback
+  // when the backend lacks the /txs/summary endpoint.
+  private summaryFromTransactions(txs: Transaction[], address: string): AddressTxSummary[] {
+    return txs.map((tx) => {
+      let value = 0;
+      for (const vout of (tx.vout || [])) {
+        if (vout.scriptpubkey_address === address) { value += vout.value; }
+      }
+      for (const vin of (tx.vin || [])) {
+        if (vin.prevout && vin.prevout.scriptpubkey_address === address) { value -= vin.prevout.value; }
+      }
+      return {
+        txid: tx.txid,
+        value,
+        height: tx.status?.block_height ?? 0,
+        time: tx.status?.block_time ?? Math.floor(Date.now() / 1000),
+      };
+    });
+  }
+
+  private getAddressSummaryFromTxs$(address: string): Observable<AddressTxSummary[]> {
+    const base = this.apiBaseUrl + this.apiBasePath + '/api/address/' + address;
+    const mempool$ = this.httpClient.get<Transaction[]>(base + '/txs/mempool').pipe(catchError(() => of([] as Transaction[])));
+    let pages = 0;
+    const chain$ = this.httpClient.get<Transaction[]>(base + '/txs/chain').pipe(
+      expand((txs: Transaction[]) => (txs.length >= 25 && ++pages < 200)
+        ? this.httpClient.get<Transaction[]>(base + '/txs/chain/' + txs[txs.length - 1].txid)
+        : EMPTY),
+      reduce((acc: Transaction[], txs: Transaction[]) => acc.concat(txs), [] as Transaction[]),
+    );
+    return mempool$.pipe(
+      switchMap((memTxs) => chain$.pipe(
+        map((chainTxs) => this.summaryFromTransactions([...memTxs, ...chainTxs], address)),
+      )),
+    );
   }
 
   getAddressesSummary$(addresses: string[],  txid?: string): Observable<AddressTxSummary[]> {
