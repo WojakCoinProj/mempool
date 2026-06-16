@@ -8,7 +8,8 @@ import { Price } from '@app/services/price.service';
 import { WebsocketService } from '@app/services/websocket.service';
 import { NgbDateStruct } from '@ng-bootstrap/ng-bootstrap';
 
-const MAX_BTC_SUPPLY = 21000000;
+// WojakCoin max supply: 210,000 blocks × 100 WJK initial × 2 (halving series) = 42,000,000 WJK
+const MAX_BTC_SUPPLY = 42000000;
 const MAX_SATOSHI_SUPPLY = MAX_BTC_SUPPLY * 100_000_000;
 
 @Component({

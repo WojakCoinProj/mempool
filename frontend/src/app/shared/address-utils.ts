@@ -23,11 +23,12 @@ export type AddressType = 'fee'
 
 const ADDRESS_PREFIXES = {
   mainnet: {
+    // WojakCoin (WJK): pubKeyHash 73 -> 'W', scriptHash 5 -> '3'. No segwit/bech32.
     base58: {
-      pubkey: ['1'],
+      pubkey: ['W'],
       script: ['3'],
     },
-    bech32: 'bc1',
+    bech32: 'wjk1notused',
   },
   testnet: {
     base58: {

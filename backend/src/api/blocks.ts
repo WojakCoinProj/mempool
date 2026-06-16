@@ -388,9 +388,8 @@ class Blocks {
   }
 
   public async $getBlockStats(block: IEsploraApi.Block, transactions: TransactionExtended[]): Promise<IBitcoinApi.BlockStats> {
-    if (!block.stale) {
-      return bitcoinClient.getBlockStats(block.id);
-    }
+    // WojakCore (legacy Bitcoin Core fork) has no `getblockstats` RPC, so always
+    // compute block stats from the transactions we already fetched (from esplora).
 
     // TODO: make these match the definitions used by the RPC response
     const totalFee = transactions.reduce((acc, tx) => acc + tx.fee, 0);

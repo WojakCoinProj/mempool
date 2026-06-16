@@ -455,8 +455,29 @@ class FailoverRouter {
 class ElectrsApi implements AbstractBitcoinApi {
   private failoverRouter = new FailoverRouter();
 
-  $getRawMempool(): Promise<IEsploraApi.Transaction['txid'][]> {
-    return this.failoverRouter.$get<IEsploraApi.Transaction['txid'][]>('/mempool/txids');
+  async $getRawMempool(): Promise<IEsploraApi.Transaction['txid'][]> {
+    // Standard esplora returns a bare array of txids. WojakCoin's electrs instead
+    // returns a paginated object { limit, start_index, total, txids: [...] }.
+    const response = await this.failoverRouter.$get<any>('/mempool/txids');
+    if (Array.isArray(response)) {
+      return response;
+    }
+    if (response && Array.isArray(response.txids)) {
+      let txids: string[] = response.txids.slice();
+      const total: number = response.total ?? txids.length;
+      let startIndex: number = (response.start_index ?? 0) + txids.length;
+      while (txids.length < total) {
+        const page = await this.failoverRouter.$get<any>('/mempool/txids', 'json', { start_index: startIndex });
+        const pageTxids: string[] = Array.isArray(page) ? page : (page?.txids ?? []);
+        if (!pageTxids.length) {
+          break;
+        }
+        txids = txids.concat(pageTxids);
+        startIndex += pageTxids.length;
+      }
+      return txids;
+    }
+    return [];
   }
 
   $getRawTransaction(txId: string): Promise<IEsploraApi.Transaction> {

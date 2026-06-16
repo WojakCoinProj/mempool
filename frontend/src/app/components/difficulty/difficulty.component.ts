@@ -104,7 +104,8 @@ export class DifficultyComponent implements OnInit {
         }
 
         const blocksUntilHalving = 210000 - (maxHeight % 210000);
-        const timeUntilHalving = new Date().getTime() + (blocksUntilHalving * 600000);
+        // WojakCoin: 2-minute blocks (120000 ms), not Bitcoin's 10 minutes.
+        const timeUntilHalving = new Date().getTime() + (blocksUntilHalving * 120000);
         const newEpochStart = Math.floor(this.stateService.latestBlockHeight / EPOCH_BLOCK_LENGTH) * EPOCH_BLOCK_LENGTH;
         const newExpectedHeight = Math.floor(newEpochStart + da.expectedBlocks);
         this.now = new Date().getTime();
@@ -244,8 +245,9 @@ function getNextBlockSubsidy(height: number): number {
     return 0;
   }
 
-  let subsidy = BigInt(50 * 100_000_000);
-  // Subsidy is cut in half every 210,000 blocks which will occur approximately every 4 years.
+  // WojakCoin: initial block subsidy is 100 WJK (Bitcoin's is 50 BTC).
+  let subsidy = BigInt(100 * 100_000_000);
+  // Subsidy is cut in half every 210,000 blocks.
   subsidy >>= BigInt(halvings);
   return Number(subsidy);
 }

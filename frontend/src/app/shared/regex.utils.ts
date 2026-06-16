@@ -33,20 +33,13 @@ const ADDRESS_CHARS: {
   };
 } = {
   mainnet: {
-    base58: `[13]` // Starts with a single 1 or 3
+    // WojakCoin (WJK) — legacy P2PKH/P2SH only, no segwit/bech32.
+    // pubKeyHash 73 -> addresses start with `W`; scriptHash 5 -> `3`. ~34 chars.
+    base58: `[W3]` // Starts with a single W (P2PKH) or 3 (P2SH)
       + BASE58_CHARS
-      + `{26,33}`, // Repeat the previous char 26-33 times.
-      // Version byte 0x00 (P2PKH) can be as short as 27 characters, up to 34 length
-      // P2SH must be 34 length
-    bech32: `(?:`
-        + `bc1` // Starts with bc1
-        + BECH32_CHARS_LW
-        + `{6,100}` // As per bech32, 6 char checksum is minimum
-      + `|`
-        + `BC1` // All upper case version
-        + BECH32_CHARS_UP
-        + `{6,100}`
-      + `)`,
+      + `{32,33}`, // 33-34 chars total
+    // WojakCoin has no segwit, so bech32 must never match.
+    bech32: `(?!x)x`,
   },
   testnet: {
     base58: `[mn2]` // Starts with a single m, n, or 2 (P2PKH is m or n, 2 is P2SH)

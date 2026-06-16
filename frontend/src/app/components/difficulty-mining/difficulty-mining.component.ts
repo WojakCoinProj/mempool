@@ -71,7 +71,8 @@ export class DifficultyMiningComponent implements OnInit {
         }
 
         this.blocksUntilHalving = 210000 - (maxHeight % 210000);
-        this.timeUntilHalving = new Date().getTime() + (this.blocksUntilHalving * 600000);
+        // WojakCoin: 2-minute blocks (120000 ms), not Bitcoin's 10 minutes.
+        this.timeUntilHalving = new Date().getTime() + (this.blocksUntilHalving * 120000);
         this.now = new Date().getTime();
 
         const data = {

@@ -128,9 +128,11 @@ PROXY_CONFIG.push(...[
     proxyTimeout: 30000,
   },
   {
+    // WojakCoin esplora-compatible REST API (electrs). The mempool backend does
+    // not serve these paths in esplora mode, so route them to the WJK esplora.
     context: ['/api/**'],
-    target: `http://127.0.0.1:3000`,
-    secure: false,
+    target: `https://api.wojakcoin.cash`,
+    secure: true,
     changeOrigin: true,
     proxyTimeout: 30000,
     pathRewrite: {
