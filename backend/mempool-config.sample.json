@@ -162,7 +162,7 @@
     "API": "http://localhost:1234"
   },
   "FIAT_PRICE": {
-    "ENABLED": true,
+    "ENABLED": false,
     "PAID": false,
     "API_KEY": "your-api-key-from-freecurrencyapi.com"
   }

@@ -1,3 +1,17 @@
+/*
+ * WojakCoin: FIAT_PRICE is disabled by default (mempool-config.sample.json).
+ *
+ * Every price feed below (Kraken, Bitfinex, Coinbase, Gemini, Bitflyer) and the
+ * bundled mtgox-weekly.json history file query/contain BITCOIN's BTC/USD price
+ * (e.g. KrakenApi's `pair=XBT` ticker) — none of these exchanges list WJK. If
+ * FIAT_PRICE.ENABLED is turned back on without changes, this explorer will
+ * silently display Bitcoin's real USD price, mislabeled as WojakCoin's, in
+ * every fiat conversion (wallet balances, fee estimates, the calculator, etc).
+ *
+ * Before re-enabling: replace these feeds with a real WJK price source (e.g.
+ * NonKYC's WJK/USDT market — the primary native WJK listing) and verify it
+ * before going live, rather than trusting the existing BTC-ticker plumbing.
+ */
 import * as fs from 'fs';
 import path from 'path';
 import config from '../config';

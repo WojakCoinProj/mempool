@@ -88,9 +88,18 @@ export function calcDifficultyAdjustment(
   network: string,
   latestBlockTimestamp: number,
 ): DifficultyAdjustment {
-  const EPOCH_BLOCK_LENGTH = 2016; // Bitcoin mainnet
-  const BLOCK_SECONDS_TARGET = 600; // Bitcoin mainnet
-  const TESTNET_MAX_BLOCK_SECONDS = 1200; // Bitcoin testnet
+  // WojakCoin: 2-minute block target (Bitcoin's is 10 minutes / 600s).
+  const BLOCK_SECONDS_TARGET = 120;
+  // WojakCoin's V2 (DGW-style) difficulty algorithm retargets every block using
+  // a 24-block trailing average (see WojakCore src/pow.cpp GetNextWorkRequiredV2),
+  // not a fixed 2016-block epoch like Bitcoin. EPOCH_BLOCK_LENGTH=1 makes
+  // "next retarget" mean "next block" and "progress through epoch" collapse to
+  // 0%, which correctly reflects continuous per-block retargeting. This also
+  // forces the trailing-window difficultyChange estimate (the quarterEpochTime
+  // branch below) to always be used instead of a "% through a fixed epoch"
+  // narrative that doesn't exist on this chain.
+  const EPOCH_BLOCK_LENGTH = 1;
+  const TESTNET_MAX_BLOCK_SECONDS = 1200; // Bitcoin testnet (unused on WojakCoin mainnet)
 
   const diffSeconds = Math.max(0, nowSeconds - DATime);
   const blocksInEpoch = (blockHeight >= 0) ? blockHeight % EPOCH_BLOCK_LENGTH : 0;
@@ -98,7 +107,7 @@ export function calcDifficultyAdjustment(
   const remainingBlocks = EPOCH_BLOCK_LENGTH - blocksInEpoch;
   const nextRetargetHeight = (blockHeight >= 0) ? blockHeight + remainingBlocks : 0;
   const expectedBlocks = diffSeconds / BLOCK_SECONDS_TARGET;
-  const actualTimespan = (blocksInEpoch === 2015 ? latestBlockTimestamp : nowSeconds) - DATime;
+  const actualTimespan = (blocksInEpoch === EPOCH_BLOCK_LENGTH - 1 ? latestBlockTimestamp : nowSeconds) - DATime;
 
   let difficultyChange = 0;
   let timeAvgSecs = blocksInEpoch ? diffSeconds / blocksInEpoch : BLOCK_SECONDS_TARGET;

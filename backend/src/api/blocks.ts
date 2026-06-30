@@ -41,6 +41,12 @@ import { parseDATUMTemplateCreator } from '../utils/bitcoin-script';
 import database from '../database';
 import { getBlockFirstSeenFromLogs, getOldestLogTimestampFromLogs, scanLogsForBlocksFirstSeen } from '../utils/file-read';
 
+// WojakCoin's V2 (DGW-style) difficulty algorithm retargets every block using a
+// 24-block trailing average (see WojakCore src/pow.cpp GetNextWorkRequiredV2),
+// not Bitcoin's fixed 2016-block epoch. An interval of 1 means every block is
+// its own retarget period, matching the chain's actual continuous retarget.
+const RETARGET_INTERVAL = 1;
+
 class Blocks {
   private blocks: BlockExtended[] = [];
   private blockSummaries: BlockSummary[] = [];
@@ -1124,7 +1130,7 @@ class Blocks {
       const blockchainInfo = await bitcoinClient.getBlockchainInfo();
       this.updateTimerProgress(timer, 'got blockchain info for initial difficulty adjustment');
       if (blockchainInfo.blocks === blockchainInfo.headers) {
-        const heightDiff = blockHeightTip % 2016;
+        const heightDiff = blockHeightTip % RETARGET_INTERVAL;
         const blockHash = await bitcoinApi.$getBlockHash(blockHeightTip - heightDiff);
         this.updateTimerProgress(timer, 'got block hash for initial difficulty adjustment');
         const block: IEsploraApi.Block = await bitcoinApi.$getBlock(blockHash);
@@ -1132,8 +1138,8 @@ class Blocks {
         this.lastDifficultyAdjustmentTime = block.timestamp;
         this.currentBits = block.bits;
 
-        if (blockHeightTip >= 2016) {
-          const previousPeriodBlockHash = await bitcoinApi.$getBlockHash(blockHeightTip - heightDiff - 2016);
+        if (blockHeightTip >= RETARGET_INTERVAL) {
+          const previousPeriodBlockHash = await bitcoinApi.$getBlockHash(blockHeightTip - heightDiff - RETARGET_INTERVAL);
           this.updateTimerProgress(timer, 'got previous block hash for initial difficulty adjustment');
           const previousPeriodBlock: IEsploraApi.Block = await bitcoinApi.$getBlock(previousPeriodBlockHash);
           this.updateTimerProgress(timer, 'got previous block for initial difficulty adjustment');

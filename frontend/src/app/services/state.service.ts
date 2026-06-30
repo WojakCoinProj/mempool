@@ -114,7 +114,7 @@ const defaultEnv: Env = {
   'MEMPOOL_BLOCKS_AMOUNT': 8,
   'GIT_COMMIT_HASH': '',
   'PACKAGE_JSON_VERSION': '',
-  'MEMPOOL_WEBSITE_URL': 'https://mempool.space',
+  'MEMPOOL_WEBSITE_URL': 'https://explorer.wojakcoin.cash',
   'LIQUID_WEBSITE_URL': 'https://liquid.network',
   'MINING_DASHBOARD': true,
   'LIGHTNING': false,
@@ -135,7 +135,11 @@ const defaultEnv: Env = {
   'PUBLIC_ACCELERATIONS': false,
   'ADDITIONAL_CURRENCIES': false,
   'STRATUM_ENABLED': false,
-  'SERVICES_API': 'https://mempool.space/api/v1/services',
+  // WojakCoin has no services backend (no accelerator/account marketplace) —
+  // point at this explorer's own domain instead of mempool.space's production
+  // services API, so a stray call (e.g. from ACCELERATOR_BUTTON) fails locally
+  // rather than silently round-tripping to a different company's live backend.
+  'SERVICES_API': 'https://explorer.wojakcoin.cash/api/v1/services',
   'TWIDGET_API': 'https://mempool.ninja',
   'PROD_DOMAINS': [],
 };
