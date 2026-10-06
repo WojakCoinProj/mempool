@@ -64,7 +64,7 @@ jobs:
             ${{ runner.os }}-cargo-
 
       - name: Install ${{ steps.gettoolchain.outputs.toolchain }} Rust toolchain
-        uses: dtolnay/rust-toolchain@67ef31d5b988238dd797d409d6f9574278e20537
+        uses: dtolnay/rust-toolchain@7e38f4b43b4db5c8dd498af069a4f6196df1d067
         with:
           toolchain: ${{ steps.gettoolchain.outputs.toolchain }}
 
