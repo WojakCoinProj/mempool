@@ -41,7 +41,17 @@ class Indexer {
   public async checkAvailableCoreIndexes(): Promise<void> {
     const updatedCoreIndexes: CoreIndex[] = [];
 
-    const indexes: any = await bitcoinClient.getIndexInfo();
+    let indexes: any;
+    try {
+      indexes = await bitcoinClient.getIndexInfo();
+    } catch (e: any) {
+      if (e?.code === -32601 || e?.message === 'Method not found') {
+        logger.debug('getindexinfo RPC not available, skipping core index check');
+        this.coreIndexes = [];
+        return;
+      }
+      throw e;
+    }
     for (const indexName in indexes) {
       const newState = {
         name: indexName,

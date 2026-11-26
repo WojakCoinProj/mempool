@@ -7,7 +7,7 @@ import { MempoolBlockViewComponent } from '@components/mempool-block-view/mempoo
 import { ClockComponent } from '@components/clock/clock.component';
 import { StatusViewComponent } from '@components/status-view/status-view.component';
 import { AddressGroupComponent } from '@components/address-group/address-group.component';
-import { TrackerGuard } from '@app/route-guards';
+import { TrackerGuard, bitcoinGraphsShellMatcher } from '@app/route-guards';
 
 const browserWindow = window as typeof window & { __env?: any };
 const browserWindowEnv = browserWindow.__env || {};
@@ -192,18 +192,7 @@ let routes: Routes = [
   ...signetRoutes,
   ...regtestRoutes,
   {
-    path: '',
-    pathMatch: 'full',
-    loadChildren: () => import('@app/bitcoin-graphs.module').then(m => m.BitcoinGraphsModule),
-    data: { preload: true },
-  },
-  {
-    path: 'mining',
-    loadChildren: () => import('@app/bitcoin-graphs.module').then(m => m.BitcoinGraphsModule),
-    data: { preload: true },
-  },
-  {
-    path: 'graphs',
+    matcher: bitcoinGraphsShellMatcher,
     loadChildren: () => import('@app/bitcoin-graphs.module').then(m => m.BitcoinGraphsModule),
     data: { preload: true },
   },
@@ -279,11 +268,6 @@ let routes: Routes = [
     path: 'status',
     data: { networks: ['bitcoin', 'liquid'] },
     component: StatusViewComponent
-  },
-  {
-    path: '',
-    loadChildren: () => import('@app/bitcoin-graphs.module').then(m => m.BitcoinGraphsModule),
-    data: { preload: true },
   },
 ];
 

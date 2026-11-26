@@ -14,6 +14,7 @@ import { StateService } from '@app/services/state.service';
 import { MiningService } from '@app/services/mining.service';
 import { StorageService } from '@app/services/storage.service';
 import { RelativeUrlPipe } from '@app/shared/pipes/relative-url/relative-url.pipe';
+import { NATIVE_INITIAL_SUBSIDY_SATS, NATIVE_SUBSIDY_HALVING_INTERVAL } from '@app/shared/native-chain-params';
 
 @Component({
   selector: 'app-block-fees-subsidy-graph',
@@ -484,7 +485,7 @@ export class BlockFeesSubsidyGraphComponent implements OnInit {
   }
 
   initSubsidies(): { [key: number]: number } {
-    let blockReward = 50 * 100_000_000;
+    let blockReward = NATIVE_INITIAL_SUBSIDY_SATS;
     const subsidies = {};
     for (let i = 0; i <= 33; i++) {
       subsidies[i] = blockReward;
@@ -494,7 +495,7 @@ export class BlockFeesSubsidyGraphComponent implements OnInit {
   }
 
   subsidyAt(height: number): number {
-    return this.subsidies[Math.floor(Math.min(height / 210000, 33))];
+    return this.subsidies[Math.floor(Math.min(height / NATIVE_SUBSIDY_HALVING_INTERVAL, 33))];
   }
 
   onZoom() {

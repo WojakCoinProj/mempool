@@ -7,9 +7,10 @@ import { ApiService } from '@app/services/api.service';
 import { Price } from '@app/services/price.service';
 import { WebsocketService } from '@app/services/websocket.service';
 import { NgbDateStruct } from '@ng-bootstrap/ng-bootstrap';
+import { NATIVE_MAX_SUPPLY_COINS } from '@app/shared/native-chain-params';
 
-const MAX_BTC_SUPPLY = 21000000;
-const MAX_SATOSHI_SUPPLY = MAX_BTC_SUPPLY * 100_000_000;
+const MAX_COIN_SUPPLY = NATIVE_MAX_SUPPLY_COINS;
+const MAX_SATOSHI_SUPPLY = MAX_COIN_SUPPLY * 100_000_000;
 
 @Component({
   selector: 'app-calculator',
@@ -21,6 +22,9 @@ const MAX_SATOSHI_SUPPLY = MAX_BTC_SUPPLY * 100_000_000;
 export class CalculatorComponent implements OnInit {
   dateModel: NgbDateStruct;
   todayDateModel: NgbDateStruct;
+
+  /** Rounded for UI copy (Wojakcoin ≈ 2× 21M BTC cap) */
+  readonly maxSupplyShortLabel = `~${Math.round(NATIVE_MAX_SUPPLY_COINS / 1_000_000)}M`;
 
   satoshis = 10000;
   form: FormGroup;
@@ -90,7 +94,7 @@ export class CalculatorComponent implements OnInit {
       this.form.get('fiat').valueChanges
     ]).subscribe(([price, value]) => {
       this.currentPrice = price;
-      const maxFiat = price * MAX_BTC_SUPPLY;
+      const maxFiat = price * MAX_COIN_SUPPLY;
       const isMaxSupply = value >= maxFiat;
       this.isMaxSupply = isMaxSupply;
       if (isMaxSupply) {
@@ -98,14 +102,14 @@ export class CalculatorComponent implements OnInit {
         this.form.get('fiat').setValue(this.formatFiat(value), { emitEvent: false });
       }
       let rate = parseFloat((value / price).toFixed(8));
-      if (rate >= MAX_BTC_SUPPLY) {
-        rate = MAX_BTC_SUPPLY;
+      if (rate >= MAX_COIN_SUPPLY) {
+        rate = MAX_COIN_SUPPLY;
       }
       const satsRate = Math.round(rate * 100_000_000);
       if (isNaN(value)) {
         return;
       }
-      this.form.get('bitcoin').setValue(isMaxSupply ? MAX_BTC_SUPPLY.toString() : rate.toFixed(8), { emitEvent: false });
+      this.form.get('bitcoin').setValue(isMaxSupply ? MAX_COIN_SUPPLY.toString() : rate.toFixed(8), { emitEvent: false });
       this.form.get('satoshis').setValue(satsRate, { emitEvent: false } );
     });
 
@@ -114,7 +118,7 @@ export class CalculatorComponent implements OnInit {
       this.form.get('bitcoin').valueChanges
     ]).subscribe(([price, value]) => {
       this.currentPrice = price;
-      const isMaxSupply = parseFloat(value) >= MAX_BTC_SUPPLY;
+      const isMaxSupply = parseFloat(value) >= MAX_COIN_SUPPLY;
       this.isMaxSupply = isMaxSupply;
       const rate = parseFloat((value * price).toFixed(8));
       if (isNaN(value)) {
@@ -130,15 +134,15 @@ export class CalculatorComponent implements OnInit {
     ]).subscribe(([price, value]) => {
       this.currentPrice = price;
       let bitcoinValue = value / 100_000_000;
-      const isMaxSupply = bitcoinValue >= MAX_BTC_SUPPLY;
+      const isMaxSupply = bitcoinValue >= MAX_COIN_SUPPLY;
       this.isMaxSupply = isMaxSupply;
       if (isMaxSupply) {
-        bitcoinValue = MAX_BTC_SUPPLY;
+        bitcoinValue = MAX_COIN_SUPPLY;
         value = MAX_SATOSHI_SUPPLY;
         this.form.get('satoshis').setValue(value, { emitEvent: false });
       }
       const rate = parseFloat((bitcoinValue * price).toFixed(8));
-      const bitcoinRate = isMaxSupply ? MAX_BTC_SUPPLY.toString() : bitcoinValue.toFixed(8);
+      const bitcoinRate = isMaxSupply ? MAX_COIN_SUPPLY.toString() : bitcoinValue.toFixed(8);
       if (isNaN(value)) {
         return;
       }
@@ -175,8 +179,8 @@ export class CalculatorComponent implements OnInit {
     if (name === 'satoshis') {
       sanitizedValue = parseFloat(sanitizedValue).toFixed(0);
     }
-    if (name === 'bitcoin' && parseFloat(sanitizedValue) >= MAX_BTC_SUPPLY) {
-      sanitizedValue = MAX_BTC_SUPPLY.toString();
+    if (name === 'bitcoin' && parseFloat(sanitizedValue) >= MAX_COIN_SUPPLY) {
+      sanitizedValue = MAX_COIN_SUPPLY.toString();
     }
     if (name === 'satoshis' && parseFloat(sanitizedValue) > MAX_SATOSHI_SUPPLY) {
       sanitizedValue = MAX_SATOSHI_SUPPLY.toString();

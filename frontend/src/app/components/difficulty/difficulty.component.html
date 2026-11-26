@@ -89,9 +89,9 @@
     <div class="difficulty-adjustment-container halving" *ngIf="(isLoadingWebSocket$ | async) === false && (difficultyEpoch$ | async) as epochData; else loadingDifficulty">
       <div class="halving-progress">
         <div class="background"></div>
-        <div class="remaining" [style]="{ left: ((210000 - epochData.blocksUntilHalving) / 2100).toFixed(2) + '%' }"></div>
+        <div class="remaining" [style]="{ left: ((subsidyHalvingInterval - epochData.blocksUntilHalving) / halvingPercentScale).toFixed(2) + '%' }"></div>
         <div class="label">
-          {{ ((210000 - epochData.blocksUntilHalving) / 2100).toFixed(2) }}%
+          {{ ((subsidyHalvingInterval - epochData.blocksUntilHalving) / halvingPercentScale).toFixed(2) }}%
         </div>
       </div>
       <div class="difficulty-stats">

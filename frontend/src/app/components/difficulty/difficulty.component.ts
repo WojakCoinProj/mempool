@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, ChangeDetectorRef, Component, HostListener, El
 import { combineLatest, Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { StateService } from '@app/services/state.service';
+import { NATIVE_EXPECTED_BLOCK_TIME_MS, NATIVE_SUBSIDY_HALVING_INTERVAL, nativeNextHalvingSubsidySats } from '@app/shared/native-chain-params';
 
 interface EpochProgress {
   base: string;
@@ -43,6 +44,10 @@ const EPOCH_BLOCK_LENGTH = 2016; // Bitcoin mainnet
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DifficultyComponent implements OnInit {
+  readonly subsidyHalvingInterval = NATIVE_SUBSIDY_HALVING_INTERVAL;
+  /** For halving progress bar: interval / 100 → 0–100% scale */
+  readonly halvingPercentScale = NATIVE_SUBSIDY_HALVING_INTERVAL / 100;
+
   @Input() showProgress = true;
   @Input() showHalving = false;
   @Input() showTitle = true;
@@ -103,12 +108,12 @@ export class DifficultyComponent implements OnInit {
           colorPreviousAdjustments = 'var(--transparent-fg)';
         }
 
-        const blocksUntilHalving = 210000 - (maxHeight % 210000);
-        const timeUntilHalving = new Date().getTime() + (blocksUntilHalving * 600000);
+        const blocksUntilHalving = NATIVE_SUBSIDY_HALVING_INTERVAL - (maxHeight % NATIVE_SUBSIDY_HALVING_INTERVAL);
+        const timeUntilHalving = new Date().getTime() + (blocksUntilHalving * NATIVE_EXPECTED_BLOCK_TIME_MS);
         const newEpochStart = Math.floor(this.stateService.latestBlockHeight / EPOCH_BLOCK_LENGTH) * EPOCH_BLOCK_LENGTH;
         const newExpectedHeight = Math.floor(newEpochStart + da.expectedBlocks);
         this.now = new Date().getTime();
-        this.nextSubsidy = getNextBlockSubsidy(maxHeight);
+        this.nextSubsidy = nativeNextHalvingSubsidySats(maxHeight);
 
         if (blocksUntilHalving < da.remainingBlocks && !this.userSelectedMode) {
           this.mode = 'halving';
@@ -237,15 +242,3 @@ export class DifficultyComponent implements OnInit {
   }
 }
 
-function getNextBlockSubsidy(height: number): number {
-  const halvings = Math.floor(height / 210_000) + 1;
-  // Force block reward to zero when right shift is undefined.
-  if (halvings >= 64) {
-    return 0;
-  }
-
-  let subsidy = BigInt(50 * 100_000_000);
-  // Subsidy is cut in half every 210,000 blocks which will occur approximately every 4 years.
-  subsidy >>= BigInt(halvings);
-  return Number(subsidy);
-}

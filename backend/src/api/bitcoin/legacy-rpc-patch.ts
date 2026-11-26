@@ -23,14 +23,26 @@ function applyPatches(): void {
     if (verbosity === 0) {
       return origGetBlock.call(this, hash, false);
     }
-    if (verbosity === 1) {
-      return origGetBlock.call(this, hash, true);
-    }
-    // Single-arg getblock(hash) — do not pass undefined or JSON-RPC may send invalid types
-    if (verbosity === undefined) {
-      return origGetBlock.call(this, hash);
-    }
-    return origGetBlock.call(this, hash, verbosity);
+    const doCall = (verbosity === 1)
+      ? origGetBlock.call(this, hash, true)
+      : (verbosity === undefined)
+        ? origGetBlock.call(this, hash)
+        : origGetBlock.call(this, hash, verbosity);
+
+    return doCall.then((block: any) => {
+      if (block && typeof block === 'object') {
+        if (block.weight === undefined && block.size !== undefined) {
+          block.weight = block.size * 4;
+        }
+        if (block.nTx === undefined && Array.isArray(block.tx)) {
+          block.nTx = block.tx.length;
+        }
+        if (block.strippedsize === undefined && block.size !== undefined) {
+          block.strippedsize = block.size;
+        }
+      }
+      return block;
+    });
   };
 
   const origGetRawTransaction = Client.prototype.getRawTransaction;
@@ -62,6 +74,24 @@ async function legacyGetBlockVerbose2(client: any, orig: any, hash: string): Pro
   const txs = await Promise.all(
     block.tx.map((txid: string) => client.getRawTransaction(txid, true))
   );
+  // Non-SegWit chains don't return weight/vsize/nTx — synthesize from size/tx array
+  if (block.weight === undefined) {
+    block.weight = block.size * 4;
+  }
+  if (block.nTx === undefined) {
+    block.nTx = txs.length;
+  }
+  if (block.strippedsize === undefined) {
+    block.strippedsize = block.size;
+  }
+  for (const tx of txs) {
+    if (tx.weight === undefined) {
+      tx.weight = (tx.size || 0) * 4;
+    }
+    if (tx.vsize === undefined) {
+      tx.vsize = tx.size || 0;
+    }
+  }
   return { ...block, tx: txs };
 }
 

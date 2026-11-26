@@ -1,6 +1,7 @@
 import { Component, Input, OnChanges, OnInit, SimpleChanges } from '@angular/core';
 import { Subscription } from 'rxjs';
 import { StateService } from '@app/services/state.service';
+import { getNativeAssetSymbol } from '@app/shared/native-asset.utils';
 
 @Component({
   selector: 'app-btc',
@@ -34,8 +35,7 @@ export class BtcComponent implements OnInit, OnChanges {
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    const nativeSymbol =
-      (typeof window !== 'undefined' && (window as any).__env && (window as any).__env.NATIVE_ASSET_SYMBOL) || 'BTC';
+    const nativeSymbol = getNativeAssetSymbol();
     if (this.satoshis >= 1_000_000) {
       this.value = (this.satoshis / 100_000_000);
       this.unit = nativeSymbol;

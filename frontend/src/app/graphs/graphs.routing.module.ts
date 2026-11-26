@@ -29,6 +29,12 @@ import {
   GraphsLazyPrefixGuard,
   MiningDashboardRootGuard,
   MiningPoolDeepGuard,
+  addressDeepUrlMatcher,
+  walletDeepUrlMatcher,
+  mempoolBlockDeepUrlMatcher,
+  addressDeepCanMatch,
+  walletDeepCanMatch,
+  mempoolBlockDeepCanMatch,
 } from '@app/route-guards';
 
 const browserWindow = window || {};
@@ -172,7 +178,8 @@ const routes: Routes = [
         redirectTo: 'acceleration/list/1',
       },
       {
-        path: 'mempool-block/:id',
+        matcher: mempoolBlockDeepUrlMatcher,
+        canMatch: [mempoolBlockDeepCanMatch],
         data: { networks: ['bitcoin', 'liquid'] },
         component: StartComponent,
         children: [
@@ -183,7 +190,8 @@ const routes: Routes = [
         ]
       },
       {
-        path: 'address/:id',
+        matcher: addressDeepUrlMatcher,
+        canMatch: [addressDeepCanMatch],
         children: [],
         component: AddressComponent,
         data: {
@@ -192,7 +200,8 @@ const routes: Routes = [
         }
       },
       {
-        path: 'wallet/:wallet',
+        matcher: walletDeepUrlMatcher,
+        canMatch: [walletDeepCanMatch],
         children: [],
         component: WalletComponent,
         data: {

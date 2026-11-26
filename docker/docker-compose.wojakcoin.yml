@@ -1,18 +1,21 @@
-# Wojakcoin mempool stack: connects to WojakCore RPC + wjk-electrs (or ElectrumX) on the host.
-# Prerequisites on the host: wojakcoind (e.g. rpcport 20760), wjk-electrs (--electrum-rpc-addr 0.0.0.0:50005).
+# Wojakcoin mempool
+# - api uses network_mode: host so it can reach 127.0.0.1 electrs + wojak RPC
+# - db exposes 127.0.0.1:3307
+# - web on 127.0.0.1:8080 proxies API to host.docker.internal:8999
 #
-# From this directory:
-#   docker compose -f docker-compose.wojakcoin.yml up -d
-#
-# Set CORE_RPC_* and ELECTRUM_* to match your machine. Host services are reached via host.docker.internal.
-
-version: "3.7"
+#   cd /root/mempool-wojakcoin/docker && docker-compose -f docker-compose.wojakcoin.yml --env-file .env up -d
 
 services:
   web:
+    image: mempool/frontend:v3.0.0
+    user: "1000:1000"
+    restart: unless-stopped
+    stop_grace_period: 1m
+    command: "./wait-for host.docker.internal:8999 --timeout=720 -- nginx -g 'daemon off;'"
     environment:
       FRONTEND_HTTP_PORT: "8080"
-      BACKEND_MAINNET_HTTP_HOST: "api"
+      BACKEND_MAINNET_HTTP_HOST: "host.docker.internal"
+      BACKEND_MAINNET_HTTP_PORT: "8999"
       MAINNET_ENABLED: "true"
       TESTNET_ENABLED: "false"
       TESTNET4_ENABLED: "false"
@@ -22,85 +25,74 @@ services:
       LIQUID_TESTNET_ENABLED: "false"
       LIGHTNING: "false"
       HISTORICAL_PRICE: "false"
-      MEMPOOL_WEBSITE_URL: "http://localhost:8080"
+      MEMPOOL_WEBSITE_URL: "https://mempool.wojakcoin.cash"
       MINING_DASHBOARD: "true"
-    # Build first: ../scripts/docker-build-wojakcoin-frontend.sh (stock mempool/frontend lacks Wojakcoin UI)
-    image: wojak-mempool-frontend:latest
-    user: "1000:1000"
-    restart: on-failure
-    stop_grace_period: 1m
-    command: "./wait-for db:3306 --timeout=720 -- nginx -g 'daemon off;'"
     ports:
-      - "8080:8080"
+      - "127.0.0.1:8080:8080"
     extra_hosts:
       - "host.docker.internal:host-gateway"
     depends_on:
-      api:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8080/ | grep -q '<html' || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 20s
+      - api
+      - db
 
   api:
+    image: mempool/backend:v3.0.0
+    user: "1000:1000"
+    restart: unless-stopped
+    stop_grace_period: 1m
+    network_mode: host
+    command: "./wait-for-it.sh 127.0.0.1:3307 --timeout=720 --strict -- ./start.sh"
     environment:
-      MEMPOOL_BACKEND: "electrum"
+      # esplora REST (local electrs) + RPC via shape-normalizing proxy
+      MEMPOOL_BACKEND: "esplora"
       MEMPOOL_NETWORK: "mainnet"
-      MEMPOOL_INDEXING_BLOCKS_AMOUNT: "8"
+      MEMPOOL_HTTP_PORT: "8999"
+      MEMPOOL_INDEXING_BLOCKS_AMOUNT: "100"
       MEMPOOL_AUTOMATIC_POOLS_UPDATE: "false"
       MEMPOOL_PRICE_UPDATES_PER_HOUR: "0"
-      CORE_RPC_HOST: "host.docker.internal"
-      CORE_RPC_PORT: "20760"
+      CORE_RPC_HOST: "127.0.0.1"
+      CORE_RPC_PORT: "20761"
       CORE_RPC_USERNAME: "${WOJAK_RPC_USER}"
       CORE_RPC_PASSWORD: "${WOJAK_RPC_PASSWORD}"
       CORE_RPC_TIMEOUT: "120000"
-      ELECTRUM_HOST: "host.docker.internal"
+      # 13001 = electrs-esplora-proxy (flattens paginated /mempool/txids for mempool backend)
+      ESPLORA_REST_API_URL: "http://127.0.0.1:13001"
+      ELECTRUM_HOST: "127.0.0.1"
       ELECTRUM_PORT: "50005"
       ELECTRUM_TLS_ENABLED: "false"
       DATABASE_ENABLED: "true"
-      DATABASE_HOST: "db"
+      DATABASE_HOST: "127.0.0.1"
+      DATABASE_PORT: "3307"
       DATABASE_DATABASE: "mempool"
       DATABASE_USERNAME: "mempool"
       DATABASE_PASSWORD: "mempool"
       STATISTICS_ENABLED: "true"
       FIAT_PRICE_ENABLED: "false"
       LIGHTNING_ENABLED: "false"
-    image: mempool/backend:latest
-    user: "1000:1000"
-    restart: on-failure
-    stop_grace_period: 1m
-    command: "./wait-for-it.sh db:3306 --timeout=720 --strict -- ./start.sh"
     volumes:
       - ./data:/backend/cache
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
     depends_on:
       db:
         condition: service_healthy
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8999/api/v1/backend-info | grep -q . || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 120s
 
   db:
+    image: mariadb:10.5.21
+    user: "1000:1000"
+    restart: unless-stopped
+    stop_grace_period: 1m
     environment:
       MYSQL_DATABASE: "mempool"
       MYSQL_USER: "mempool"
       MYSQL_PASSWORD: "mempool"
       MYSQL_ROOT_PASSWORD: "admin"
       MARIADB_AUTO_UPGRADE: "1"
-    image: mariadb:10.5.21
-    user: "1000:1000"
-    restart: on-failure
-    stop_grace_period: 1m
+    ports:
+      - "127.0.0.1:3307:3306"
     volumes:
       - ./mysql/data:/var/lib/mysql
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "mempool", "-pmempool"]
       interval: 5s
       timeout: 5s
-      retries: 10
+      retries: 30
+      start_period: 30s

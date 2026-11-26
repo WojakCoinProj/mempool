@@ -82,6 +82,7 @@ import { AssetsFeaturedComponent } from '@components/assets/assets-featured/asse
 import { AssetGroupComponent } from '@components/assets/asset-group/asset-group.component';
 import { AssetCirculationComponent } from '@components/asset-circulation/asset-circulation.component';
 import { AmountShortenerPipe } from '@app/shared/pipes/amount-shortener.pipe';
+import { NativeAssetSymbolPipe } from '@app/shared/pipes/native-asset-symbol.pipe';
 import { DifficultyAdjustmentsTable } from '@components/difficulty-adjustments-table/difficulty-adjustments-table.components';
 import { BlocksList } from '@components/blocks-list/blocks-list.component';
 import { RbfList } from '@components/rbf-list/rbf-list.component';
@@ -208,6 +209,7 @@ import { GithubLogin } from '@components/github-login.component/github-login.com
     AssetGroupComponent,
     AssetCirculationComponent,
     AmountShortenerPipe,
+    NativeAssetSymbolPipe,
     DifficultyAdjustmentsTable,
     BlocksList,
     RbfList,
@@ -363,6 +365,7 @@ import { GithubLogin } from '@components/github-login.component/github-login.com
     AssetGroupComponent,
     AssetCirculationComponent,
     AmountShortenerPipe,
+    NativeAssetSymbolPipe,
     DifficultyAdjustmentsTable,
     BlocksList,
     StaleList,

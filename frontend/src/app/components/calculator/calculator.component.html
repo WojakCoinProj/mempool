@@ -33,7 +33,7 @@
         </div>
 
         <div class="input-group input-group-lg mb-1">
-          <span class="input-group-text">BTC</span>
+          <span class="input-group-text">{{ true | nativeAssetSymbol }}</span>
           <input type="text" inputmode="decimal" class="form-control" formControlName="bitcoin" (input)="transformInput('bitcoin')" (click)="selectAll($event)">
           <app-clipboard [button]="true" [text]="form.get('bitcoin').value" [class]="'btn btn-lg btn-secondary ms-1'"></app-clipboard>
         </div>
@@ -47,8 +47,8 @@
     </div>
 
     <div class="row justify-content-center mt-3" *ngIf="isMaxSupply">
-      <div class="alert alert-warning" role="alert" i18n="calculator.max-supply-warning|Max supply warning message">
-        Values were capped at the max supply of 21M BTC
+      <div class="alert alert-warning" role="alert">
+        <span i18n="calculator.max-supply-warning|Max supply warning message">Values were capped at the max supply of</span> {{ maxSupplyShortLabel }} {{ true | nativeAssetSymbol }}
       </div>
     </div>
 

@@ -11,6 +11,14 @@ import { ApiService } from '@app/services/api.service';
 import { SearchResultsComponent } from '@components/search-form/search-results/search-results.component';
 import { Network, findOtherNetworks, getRegex, getTargetUrl, needBaseModuleChange } from '@app/shared/regex.utils';
 
+/** StateService uses '' for mainnet; getRegex expects the literal 'mainnet' network key. */
+function networkForRegex(network: string): Network {
+  if (!network || network === '') {
+    return 'mainnet';
+  }
+  return network as Network;
+}
+
 @Component({
   selector: 'app-search-form',
   templateUrl: './search-form.component.html',
@@ -39,8 +47,8 @@ export class SearchFormComponent implements OnInit {
     }
   }
 
-  regexAddress = getRegex('address', 'mainnet'); // Default to mainnet
-  regexBlockhash = getRegex('blockhash', 'mainnet');
+  regexAddress = getRegex('address', networkForRegex(''));
+  regexBlockhash = getRegex('blockhash', networkForRegex(''));
   regexTransaction = getRegex('transaction');
   regexBlockheight = getRegex('blockheight');
   regexDate = getRegex('date');
@@ -73,9 +81,9 @@ export class SearchFormComponent implements OnInit {
     this.env = this.stateService.env;
     this.stateService.networkChanged$.subscribe((network) => {
       this.network = network;
-      // TODO: Eventually change network type here from string to enum of consts
-      this.regexAddress = getRegex('address', network as any || 'mainnet');
-      this.regexBlockhash = getRegex('blockhash', network as any || 'mainnet');
+      const net = networkForRegex(network);
+      this.regexAddress = getRegex('address', net);
+      this.regexBlockhash = getRegex('blockhash', net);
     });
 
     this.router.events.subscribe((e: NavigationStart) => { // Reset search focus when changing page
@@ -193,11 +201,12 @@ export class SearchFormComponent implements OnInit {
           const matchesBlockHeight = this.regexBlockheight.test(searchText) && parseInt(searchText) <= this.stateService.latestBlockHeight;
           const matchesDateTime = this.regexDate.test(searchText) && new Date(searchText).toString() !== 'Invalid Date' && new Date(searchText).getTime() <= Date.now() && isNetworkBitcoin;
           const matchesUnixTimestamp = this.regexUnixTimestamp.test(searchText) && parseInt(searchText) <= Math.floor(Date.now() / 1000) && isNetworkBitcoin;
-          const matchesTxId = this.regexTransaction.test(searchText) && !this.regexBlockhash.test(searchText);
-          const matchesBlockHash = this.regexBlockhash.test(searchText);
+          // Prefer tx over block-hash pattern: both are 64 hex; PoW block hashes mis-classify many txids as blocks.
+          const matchesTxId = this.regexTransaction.test(searchText);
+          const matchesBlockHash = this.regexBlockhash.test(searchText) && !matchesTxId;
           const matchesAddress = !matchesTxId && this.regexAddress.test(searchText);
           const publicKey = matchesAddress && searchText.startsWith('0');
-          const otherNetworks = findOtherNetworks(searchText, this.network as any || 'mainnet', this.env);
+          const otherNetworks = findOtherNetworks(searchText, networkForRegex(this.network), this.env);
           const liquidAsset = this.assets ? (this.assets[searchText] || []) : [];
           const pools = this.pools.filter(pool => pool['name'].toLowerCase().includes(searchText.toLowerCase())).slice(0, 10);
 
@@ -231,7 +240,7 @@ export class SearchFormComponent implements OnInit {
   }
 
   handleKeyDown($event): void {
-    this.searchResults.handleKeyDown($event);
+    this.searchResults?.handleKeyDown($event);
   }
 
   itemSelected(): void {
@@ -262,17 +271,16 @@ export class SearchFormComponent implements OnInit {
   }
 
   search(result?: string): void {
-    const searchText = result || this.searchForm.value.searchText.trim();
+    const searchText = (typeof result === 'string' && result.length ? result : (this.searchForm.value.searchText || '')).trim();
     if (searchText) {
       this.isSearching = true;
 
       if (!this.regexTransaction.test(searchText) && this.regexAddress.test(searchText)) {
         this.navigate('/address/', searchText);
-      } else if (this.regexBlockhash.test(searchText)) {
-        this.navigate('/block/', searchText);
       } else if (this.regexBlockheight.test(searchText)) {
         parseInt(searchText) <= this.stateService.latestBlockHeight ? this.navigate('/block/', searchText) : this.isSearching = false;
       } else if (this.regexTransaction.test(searchText)) {
+        // Before block-hash: 64-hex strings match both; PoW block hashes would steal most txid searches.
         const matches = this.regexTransaction.exec(searchText);
         if (this.network === 'liquid' || this.network === 'liquidtestnet') {
           if (this.assets[matches[0]]) {
@@ -291,6 +299,8 @@ export class SearchFormComponent implements OnInit {
         } else {
           this.navigate('/tx/', matches[0]);
         }
+      } else if (this.regexBlockhash.test(searchText)) {
+        this.navigate('/block/', searchText);
       } else if (this.regexDate.test(searchText) || this.regexUnixTimestamp.test(searchText)) {
         let timestamp: number;
         this.regexDate.test(searchText) ? timestamp = Math.floor(new Date(searchText).getTime() / 1000) : timestamp = searchText;

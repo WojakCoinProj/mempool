@@ -215,7 +215,7 @@ class Blocks {
     const stripped = block.tx.map((tx: IBitcoinApi.VerboseTransaction) => {
       return {
         txid: tx.txid,
-        vsize: tx.weight / 4,
+        vsize: (tx.weight ?? tx.size * 4) / 4,
         fee: tx.fee ? Math.round(tx.fee * 100000000) : 0,
         value: Math.round(tx.vout.reduce((acc, vout) => acc + (vout.value ? vout.value : 0), 0) * 100000000),
         flags: 0,
@@ -307,7 +307,7 @@ class Blocks {
       }
     }
 
-    extras.virtualSize = block.weight / 4.0;
+    extras.virtualSize = (block.weight ?? block.size * 4) / 4.0;
     if (coinbaseTx?.vout.length > 0) {
       extras.coinbaseAddress = coinbaseTx.vout[0].scriptpubkey_address ?? null;
       extras.coinbaseAddresses = [...new Set<string>(coinbaseTx.vout.map(v => v.scriptpubkey_address).filter(a => a) as string[])];
@@ -405,10 +405,10 @@ class Blocks {
     const totalReward = transactions[0].vout.reduce((acc, vout) => acc + vout.value, 0);
     const sortedByFee = transactions.sort((a, b) => a.fee - b.fee);
     const sortedByVsize = transactions.sort((a, b) => a.vsize - b.vsize);
-    const sortedByFeerate = transactions.sort((a, b) => (a.fee / a.weight) - (b.fee / b.weight));
-    const sortedFeerates = sortedByFeerate.map(tx => (tx.fee / (tx.weight / 4)));
+    const sortedByFeerate = transactions.sort((a, b) => (a.fee / (a.weight || a.vsize * 4)) - (b.fee / (b.weight || b.vsize * 4)));
+    const sortedFeerates = sortedByFeerate.map(tx => (tx.fee / ((tx.weight || tx.vsize * 4) / 4)));
     const avgfee = totalFee / transactions.length;
-    const avgfeerate = totalFee / (block.weight / 4);
+    const avgfeerate = totalFee / ((block.weight ?? block.size * 4) / 4);
     const avgtxsize = totalVsize / transactions.length;
     const medianfee = sortedByFee[Math.floor(transactions.length / 2)].fee;
     const mediantime = block.timestamp;
@@ -428,7 +428,7 @@ class Blocks {
     const time = block.timestamp;
     const total_out = transactions.reduce((acc, tx) => acc + tx.vout.reduce((acc, vout) => acc + vout.value, 0), 0);
     const total_size = block.size;
-    const total_weight = block.weight;
+    const total_weight = block.weight ?? block.size * 4;
     const totalfee = totalFee;
     const txs = transactions.length;
     const utxo_increase = 0;

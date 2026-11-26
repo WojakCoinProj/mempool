@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, Input, OnInit } from '@angular/core
 import { combineLatest, Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { StateService } from '@app/services/state.service';
+import { NATIVE_EXPECTED_BLOCK_TIME_MS, NATIVE_SUBSIDY_HALVING_INTERVAL } from '@app/shared/native-chain-params';
 
 interface EpochProgress {
   base: string;
@@ -70,8 +71,8 @@ export class DifficultyMiningComponent implements OnInit {
           colorPreviousAdjustments = 'var(--transparent-fg)';
         }
 
-        this.blocksUntilHalving = 210000 - (maxHeight % 210000);
-        this.timeUntilHalving = new Date().getTime() + (this.blocksUntilHalving * 600000);
+        this.blocksUntilHalving = NATIVE_SUBSIDY_HALVING_INTERVAL - (maxHeight % NATIVE_SUBSIDY_HALVING_INTERVAL);
+        this.timeUntilHalving = new Date().getTime() + (this.blocksUntilHalving * NATIVE_EXPECTED_BLOCK_TIME_MS);
         this.now = new Date().getTime();
 
         const data = {

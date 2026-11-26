@@ -4,6 +4,7 @@ import { StateService } from '@app/services/state.service';
 import { WalletStats } from '../../../shared/wallet-stats';
 import { AddressTxSummary } from '../../../interfaces/electrs.interface';
 import { Treasury } from '../../../interfaces/node-api.interface';
+import { NATIVE_INITIAL_SUBSIDY_SATS, NATIVE_MAX_SUPPLY_COINS, NATIVE_SUBSIDY_HALVING_INTERVAL } from '@app/shared/native-chain-params';
 
 
 interface SupplyShare {
@@ -84,14 +85,15 @@ export class TreasuriesSupplyComponent implements OnInit, OnDestroy {
   }
 
   processSupplyShares(): void {
-    const total = 20999999.9769;
+    const total = NATIVE_MAX_SUPPLY_COINS;
 
-    // calculate total mined based on block height & subsidy schedule
+    // calculate total mined based on block height & subsidy schedule (WojakCoin Core GetBlockSubsidy)
+    const initialCoins = NATIVE_INITIAL_SUBSIDY_SATS / 100_000_000;
     let mined = 0;
-    for (let i = 0; i < this.currentHeight; i += 210000) {
-      const subsidy = 50 / Math.pow(2, Math.floor(i / 210000));
-      if ((i + 210000) <= this.currentHeight) {
-        mined += subsidy * 210000;
+    for (let i = 0; i < this.currentHeight; i += NATIVE_SUBSIDY_HALVING_INTERVAL) {
+      const subsidy = initialCoins / Math.pow(2, Math.floor(i / NATIVE_SUBSIDY_HALVING_INTERVAL));
+      if ((i + NATIVE_SUBSIDY_HALVING_INTERVAL) <= this.currentHeight) {
+        mined += subsidy * NATIVE_SUBSIDY_HALVING_INTERVAL;
       } else {
         mined += subsidy * (this.currentHeight - i);
       }
